@@ -17,7 +17,7 @@
 #define WIFI_CONFIG_SERVER_PORT 80
 
 #ifndef WIFI_CONFIG_CONNECT_TIMEOUT
-#define WIFI_CONFIG_CONNECT_TIMEOUT 15000
+#define WIFI_CONFIG_CONNECT_TIMEOUT 300000
 #endif
 
 #define DEBUG(message, ...) printf(">>> wifi_config: %s: " message "\n", __func__, ##__VA_ARGS__);
