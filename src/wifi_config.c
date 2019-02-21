@@ -241,18 +241,18 @@ static void wifi_config_server_on_settings_update(client_t *client) {
         client_send_redirect(client, 302, "/settings");
         return;
     }
-	
+
     static const char payload[] = "HTTP/1.1 204 \r\nContent-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
     client_send(client, payload, sizeof(payload)-1);
 	
-	if (strcmp(ssid_param->value, "reset") == 0 && strcmp(password_param->value, "reset") == 0 ) {
+    if (strcmp(ssid_param->value, "reset") == 0 && strcmp(password_param->value, "reset") == 0 ) {
         if (on_reset) {
-		    form_params_free(form);
-			wifi_config_reset();
+            form_params_free(form);
+            wifi_config_reset();
             on_reset();
-		}		
-		return;
-	}
+        }		
+        return;
+    }
 
     sysparam_set_string("wifi_ssid", ssid_param->value);
     sysparam_set_string("wifi_password", password_param->value);
@@ -667,7 +667,7 @@ static int wifi_config_station_connect() {
     context->connect_start_time = xTaskGetTickCount();
     sdk_os_timer_setfn(&context->sta_connect_timeout, wifi_config_sta_connect_timeout_callback, context);
     sdk_os_timer_arm(&context->sta_connect_timeout, 500, 1);
-	
+
     return 0;
 }
 
