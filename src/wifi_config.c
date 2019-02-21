@@ -13,6 +13,7 @@
 #include <dhcpserver.h>
 
 #include "form_urlencoded.h"
+#include "wifi_config.h"
 
 #define WIFI_CONFIG_SERVER_PORT 80
 
@@ -46,7 +47,7 @@ typedef struct {
 
 
 static wifi_config_context_t *context;
-
+void (*on_reset)();
 
 typedef struct _client {
     int fd;
@@ -240,9 +241,18 @@ static void wifi_config_server_on_settings_update(client_t *client) {
         client_send_redirect(client, 302, "/settings");
         return;
     }
-
+	
     static const char payload[] = "HTTP/1.1 204 \r\nContent-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
     client_send(client, payload, sizeof(payload)-1);
+	
+	if (strcmp(ssid_param->value, "reset") == 0 && strcmp(password_param->value, "reset") == 0 ) {
+        if (on_reset) {
+		    form_params_free(form);
+			wifi_config_reset();
+            on_reset();
+		}		
+		return;
+	}
 
     sysparam_set_string("wifi_ssid", ssid_param->value);
     sysparam_set_string("wifi_password", password_param->value);
@@ -623,7 +633,6 @@ static void wifi_config_sta_connect_timeout_callback(void *arg) {
     wifi_config_softap_start();
 }
 
-
 static int wifi_config_station_connect() {
     char *wifi_ssid = NULL;
     char *wifi_password = NULL;
@@ -658,12 +667,11 @@ static int wifi_config_station_connect() {
     context->connect_start_time = xTaskGetTickCount();
     sdk_os_timer_setfn(&context->sta_connect_timeout, wifi_config_sta_connect_timeout_callback, context);
     sdk_os_timer_arm(&context->sta_connect_timeout, 500, 1);
-
+	
     return 0;
 }
 
-
-void wifi_config_init(const char *ssid_prefix, const char *password, void (*on_wifi_ready)()) {
+void wifi_config_init(const char *ssid_prefix, const char *password, void (*on_wifi_ready)(), void (*on_reset_callback)()) {
     INFO("Initializing WiFi config");
     if (password && strlen(password) < 8) {
         ERROR("Password should be at least 8 characters");
@@ -678,6 +686,7 @@ void wifi_config_init(const char *ssid_prefix, const char *password, void (*on_w
         context->password = strdup(password);
 
     context->on_wifi_ready = on_wifi_ready;
+	on_reset = on_reset_callback;
 
     if (wifi_config_station_connect()) {
         wifi_config_softap_start();
